@@ -112,6 +112,8 @@ export interface ExtensionState {
 	githubCopilotIsAuthenticated?: boolean
 	githubCopilotEmail?: string
 	githubCopilotModels?: Record<string, any>
+	claudeOAuthIsAuthenticated?: boolean
+	claudeOAuthEmail?: string
 
 }
 

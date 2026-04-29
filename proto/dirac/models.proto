@@ -43,6 +43,10 @@ service ModelsService {
   rpc authenticateOpenAiCodex(EmptyRequest) returns (Empty);
   // Signs out from OpenAI Codex
   rpc signOutOpenAiCodex(EmptyRequest) returns (Empty);
+  // Authenticates with Claude (claude.ai subscription) via OAuth
+  rpc authenticateClaudeOAuth(EmptyRequest) returns (Empty);
+  // Signs out from Claude OAuth
+  rpc signOutClaudeOAuth(EmptyRequest) returns (Empty);
   // Refreshes and returns Groq models
   rpc refreshGroqModelsRpc(EmptyRequest) returns (OpenRouterCompatibleModelInfo);
   // Refreshes and returns Baseten models

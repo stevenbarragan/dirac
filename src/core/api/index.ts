@@ -27,6 +27,7 @@ import { MoonshotHandler } from "./providers/moonshot"
 import { NebiusHandler } from "./providers/nebius"
 import { NousResearchHandler } from "./providers/nousresearch"
 import { OpenAiHandler } from "./providers/openai"
+import { ClaudeOAuthHandler } from "./providers/claude-oauth"
 import { OpenAiCodexHandler } from "./providers/openai-codex"
 import { OpenAiNativeHandler } from "./providers/openai-native"
 import { OpenRouterHandler } from "./providers/openrouter"
@@ -211,6 +212,13 @@ function createHandlerForProvider(
 				onRetryAttempt: options.onRetryAttempt,
 				openAiNativeApiKey: options.openAiNativeApiKey,
 				reasoningEffort: mode === "plan" ? options.planModeReasoningEffort : options.actModeReasoningEffort,
+				apiModelId: mode === "plan" ? options.planModeApiModelId : options.actModeApiModelId,
+				thinkingBudgetTokens:
+					mode === "plan" ? options.planModeThinkingBudgetTokens : options.actModeThinkingBudgetTokens,
+			})
+		case "claude-oauth":
+			return new ClaudeOAuthHandler({
+				onRetryAttempt: options.onRetryAttempt,
 				apiModelId: mode === "plan" ? options.planModeApiModelId : options.actModeApiModelId,
 				thinkingBudgetTokens:
 					mode === "plan" ? options.planModeThinkingBudgetTokens : options.actModeThinkingBudgetTokens,

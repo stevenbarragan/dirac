@@ -304,6 +304,7 @@ const SECRETS_KEYS = [
 	"openai-codex-oauth-credentials", // JSON blob containing OAuth tokens for OpenAI Codex (ChatGPT subscription)
 	"wandbApiKey",
 	"github-copilot-oauth-credentials",
+	"claude-oauth-credentials", // JSON blob containing OAuth tokens for Claude (claude.ai subscription)
 ] as const
 
 // WARNING, these are not ALL of the local state keys in practice. For example, FileContextTracker

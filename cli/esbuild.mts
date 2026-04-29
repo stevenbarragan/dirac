@@ -281,7 +281,7 @@ const cliConfig: esbuild.BuildOptions = {
 	entryPoints: [path.join(__dirname, "src", "index.ts")],
 	outfile: path.join(__dirname, "dist", "cli.mjs"),
 	banner: {
-		js: `#!/usr/bin/env node
+		js: `#!/usr/bin/env -S node --no-wasm-tier-up
 // Suppress all Node.js warnings (deprecation, experimental, etc.)
 process.emitWarning = () => {};
 import { createRequire as _createRequire } from 'module';

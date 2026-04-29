@@ -50,6 +50,8 @@ interface SettingsState {
 	githubCopilotEmail?: string
 	openAiCodexIsAuthenticated: boolean
 	openAiCodexEmail?: string
+	claudeOAuthIsAuthenticated: boolean
+	claudeOAuthEmail?: string
 	autoApprovalSettings: ExtensionState["autoApprovalSettings"]
 	browserSettings: ExtensionState["browserSettings"]
 	preferredLanguage: string
@@ -308,6 +310,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 	githubCopilotEmail: undefined,
 	openAiCodexIsAuthenticated: false,
 	openAiCodexEmail: undefined,
+	claudeOAuthIsAuthenticated: false,
+	claudeOAuthEmail: undefined,
 
 	triggerNativeToolCall: false,
 	diracMessages: [],

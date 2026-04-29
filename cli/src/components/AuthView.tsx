@@ -7,6 +7,8 @@ import { Box, Text, useApp, useInput } from "ink"
 import Spinner from "ink-spinner"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { StateManager } from "@/core/storage/StateManager"
+import { claudeOAuthManager } from "@/integrations/claude-oauth/oauth"
+import { claudeOAuthDefaultModelId } from "@/shared/api"
 import { openAiCodexOAuthManager } from "@/integrations/openai-codex/oauth"
 import { openAiCodexDefaultModelId } from "@/shared/api"
 import { getRandomQuote } from "@/shared/quotes"
@@ -44,6 +46,7 @@ type AuthStep =
 	| "import"
 	| "bedrock_custom"
 	| "github_copilot_auth"
+	| "claude_oauth_auth"
 
 interface AuthViewProps {
 	controller: any
@@ -163,6 +166,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 	const [errorMessage, setErrorMessage] = useState("")
 	const [copied, setCopied] = useState(false)
 	const [codexAuthUrl, setCodexAuthUrl] = useState<string | null>(null)
+	const [claudeOAuthUrl, setClaudeOAuthUrl] = useState<string | null>(null)
 	const [providerSearch, setProviderSearch] = useState("")
 	const [providerIndex, setProviderIndex] = useState(0)
 	const [importSources, setImportSources] = useState<DetectedSources>({ codex: false, opencode: false })
@@ -173,6 +177,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 	const mainMenuItems: SelectItem[] = useMemo(() => {
 		const items: SelectItem[] = []
 
+		items.push({ label: "Sign in with Claude (Pro/Max subscription)", value: "claude_oauth_auth" })
 		// Add OpenAI Codex options for ChatGPT subscribers
 		items.push({ label: "Sign in with ChatGPT Subscription", value: "openai_codex_auth" })
 		items.push({ label: "Sign in with ChatGPT Device Code", value: "openai_codex_device_auth" })
@@ -237,6 +242,29 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 		}
 	}, [step, selectedProvider])
 
+	// Start Claude OAuth flow
+	const startClaudeOAuthAuth = useCallback(async () => {
+		try {
+			const authUrl = claudeOAuthManager.startAuthorizationFlow()
+			setClaudeOAuthUrl(authUrl)
+			await openExternal(authUrl)
+			await claudeOAuthManager.waitForCallback()
+			await applyProviderConfig({ providerId: "claude-oauth", controller })
+			const stateManager = StateManager.get()
+			stateManager.setGlobalState("welcomeViewCompleted", true)
+			await stateManager.flushPendingState()
+			setSelectedProvider("claude-oauth")
+			setModelId(claudeOAuthDefaultModelId)
+			setStep("success")
+			setClaudeOAuthUrl(null)
+		} catch (error) {
+			claudeOAuthManager.cancelAuthorizationFlow()
+			setErrorMessage(error instanceof Error ? error.message : String(error))
+			setStep("error")
+			setClaudeOAuthUrl(null)
+		}
+	}, [controller])
+
 	// Start OpenAI Codex OAuth flow
 	const startOpenAiCodexAuth = useCallback(async () => {
 		try {
@@ -272,6 +300,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 			if (value === "exit") {
 				exit()
 				onComplete?.()
+			} else if (value === "claude_oauth_auth") {
+				setStep("claude_oauth_auth")
+				startClaudeOAuthAuth()
 			} else if (value === "openai_codex_auth") {
 				setStep("openai_codex_auth")
 				startOpenAiCodexAuth()
@@ -289,13 +320,16 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 				setStep("import")
 			}
 		},
-		[exit, onComplete, startOpenAiCodexAuth],
+		[exit, onComplete, startClaudeOAuthAuth, startOpenAiCodexAuth],
 	)
 
 	const handleProviderSelect = useCallback(
 		(value: string) => {
 			setSelectedProvider(value)
-			if (value === "openai-codex") {
+			if (value === "claude-oauth") {
+				setStep("claude_oauth_auth")
+				startClaudeOAuthAuth()
+			} else if (value === "openai-codex") {
 				setStep("openai_codex_auth")
 				startOpenAiCodexAuth()
 			} else if (value === "github-copilot") {
@@ -306,7 +340,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 				setStep("apikey")
 			}
 		},
-		[startOpenAiCodexAuth],
+		[startClaudeOAuthAuth, startOpenAiCodexAuth],
 	)
 
 	const handleApiKeySubmit = useCallback(
@@ -497,6 +531,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 				setBaseUrl("")
 				setStep("modelid")
 				break
+			case "claude_oauth_auth":
+				claudeOAuthManager.cancelAuthorizationFlow()
+				setStep("menu")
+				break
 			case "openai_codex_auth":
 				openAiCodexOAuthManager.cancelAuthorizationFlow()
 				setStep("menu")
@@ -634,6 +672,40 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 					</Box>
 				)
 
+			case "claude_oauth_auth":
+				return (
+					<Box flexDirection="column">
+						<Box>
+							<Text color={COLORS.primaryBlue}>
+								<Spinner type="dots" />
+							</Text>
+							<Text color="white"> Waiting for Claude sign-in...</Text>
+						</Box>
+						<Text> </Text>
+						<Text color="gray">Sign in with your Claude account in the browser.</Text>
+						{claudeOAuthUrl && (
+							<Box flexDirection="column" marginTop={1}>
+								<Text color="gray">If the browser didn't open, use this link:</Text>
+								<Box marginTop={1}>
+									<Text bold color="cyan">
+										{terminalLink("👉 Click here to sign in with Claude", claudeOAuthUrl)}
+									</Text>
+								</Box>
+								<Box marginTop={1}>
+									<Text color="yellow">
+										Note: If you are on a remote machine, you may need to set up SSH port forwarding:
+									</Text>
+								</Box>
+								<Text color="gray">ssh -L 54545:localhost:54545 your-remote-host</Text>
+							</Box>
+						)}
+						<Text> </Text>
+						<Text color="gray">Requires Claude Pro or Max subscription.</Text>
+						<Text> </Text>
+						<Text color="gray">Esc to cancel</Text>
+					</Box>
+				)
+
 			case "openai_codex_auth":
 				return (
 					<Box flexDirection="column">
@@ -763,7 +835,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ controller, onComplete, onEr
 
 	// Steps that allow going back with escape (apikey handled by ApiKeyInput component)
 	// OcaEmployeeCheck handles its own escape key, so oca_employee_check is not in this list
-	const canGoBack = ["provider", "modelid", "baseurl", "openai_codex_auth", "openai_codex_device_auth", "bedrock", "error"].includes(
+	const canGoBack = ["provider", "modelid", "baseurl", "claude_oauth_auth", "openai_codex_auth", "openai_codex_device_auth", "bedrock", "error"].includes(
 		step,
 	)
 

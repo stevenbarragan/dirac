@@ -44,6 +44,7 @@ import { appendDiracStealthModels } from "./models/refreshOpenRouterModels"
 import { checkCliInstallation } from "./state/checkCliInstallation"
 import { sendStateUpdate } from "./state/subscribeToState"
 import { githubCopilotAuthManager } from "@/integrations/github-copilot/auth"
+import { claudeOAuthManager } from "@/integrations/claude-oauth/oauth"
 import { sendChatButtonClickedEvent } from "./ui/subscribeToChatButtonClicked"
 import { SkillMetadata } from "@/shared/skills"
 
@@ -686,6 +687,10 @@ export class Controller {
 		const githubCopilotEmail = (await githubCopilotAuthManager.getEmail()) ?? undefined
 		const githubCopilotModels = this.stateManager.getModelsCache("github-copilot") ?? undefined
 
+		// Check Claude OAuth authentication status
+		const claudeOAuthIsAuthenticated = await claudeOAuthManager.isAuthenticated()
+		const claudeOAuthEmail = (await claudeOAuthManager.getEmail()) ?? undefined
+
 		return {
 			version,
 			apiConfiguration,
@@ -764,6 +769,8 @@ export class Controller {
 			githubCopilotIsAuthenticated,
 			githubCopilotEmail,
 			githubCopilotModels,
+			claudeOAuthIsAuthenticated,
+			claudeOAuthEmail,
 			availableSkills,
 		}
 	}

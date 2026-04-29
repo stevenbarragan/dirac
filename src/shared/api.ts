@@ -43,6 +43,7 @@ export type ApiProvider =
 	| "hicap"
 	| "nousResearch"
 	| "wandb"
+	| "claude-oauth"
 
 export const ALL_PROVIDERS: ApiProvider[] = [
 	"anthropic",
@@ -86,6 +87,7 @@ export const ALL_PROVIDERS: ApiProvider[] = [
 	"hicap",
 	"nousResearch",
 	"wandb",
+	"claude-oauth",
 ]
 
 export const DEFAULT_API_PROVIDER = "openrouter" as ApiProvider
@@ -1133,6 +1135,44 @@ export const openAiCodexModels = {
 		inputPrice: 0,
 		outputPrice: 0,
 		description: "GPT-5.4 Pro Codex via ChatGPT subscription",
+	},
+} as const satisfies Record<string, ModelInfo>
+
+// Claude OAuth (claude.ai Pro/Max subscription)
+// Uses OAuth 2.0 + PKCE authentication via claude.ai, routes to api.anthropic.com
+// Subscription-based — costs are covered by the Pro/Max plan
+export type ClaudeOAuthModelId = keyof typeof claudeOAuthModels
+export const claudeOAuthDefaultModelId: ClaudeOAuthModelId = "claude-sonnet-4-6"
+export const claudeOAuthModels = {
+	"claude-sonnet-4-6": {
+		maxTokens: 64_000,
+		contextWindow: 200_000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		supportsReasoning: true,
+		inputPrice: 0,
+		outputPrice: 0,
+		description: "Claude Sonnet 4.6 via Claude Pro/Max subscription (OAuth)",
+	},
+	"claude-opus-4-7": {
+		maxTokens: 32_000,
+		contextWindow: 200_000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		supportsReasoning: true,
+		inputPrice: 0,
+		outputPrice: 0,
+		description: "Claude Opus 4.7 via Claude Pro/Max subscription (OAuth)",
+	},
+	"claude-haiku-4-5-20251001": {
+		maxTokens: 16_000,
+		contextWindow: 200_000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		supportsReasoning: false,
+		inputPrice: 0,
+		outputPrice: 0,
+		description: "Claude Haiku 4.5 via Claude Pro/Max subscription (OAuth)",
 	},
 } as const satisfies Record<string, ModelInfo>
 
@@ -2421,6 +2461,7 @@ export const ALL_MODEL_MAPS: [ApiProvider, Record<string, ModelInfo>][] = [
 	["gemini", geminiModels],
 	["openai-native", openAiNativeModels],
 	["openai-codex", openAiCodexModels],
+	["claude-oauth", claudeOAuthModels],
 	["deepseek", deepSeekModels],
 	["huggingface", huggingFaceModels],
 	["qwen", internationalQwenModels],
